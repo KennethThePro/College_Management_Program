@@ -1,0 +1,315 @@
+#!/bin/bash
+
+## Display Examination Marks Form (EMF)
+function main(){
+	./formHeaderFormat "Examination Marks Form"
+	
+	echo -n "Academic Year (YYYY): "; read academicYear
+	validateAcademicYear
+	
+	echo -n "Semester (1 / 2 / 3): "; read semester
+	validateSemester
+	echo ""
+	
+	course=()  ## array to store information for results slip
+	let totalQualityPointsInt=0  ## variable to store total QP(integer)
+	
+	## keep looping course code and exam marks prompt
+	while [ true ]
+	do
+		echo -n "Enter course code    : "; read courseCode	
+		courseCode=${courseCode^^} ##change to uppercase	
+		validateCourseCode  ## validate coursecode
+		
+		echo -n "Enter marks obtained : "; read marksObtained
+			invalidMarks=0  ## initialise as 0 (valid)
+			categoriseMarks ## validate and categorise marks
+			
+		## marks are invalid
+		while [ $invalidMarks -eq 1 ]
+		do
+			## prompt user to enter again
+			echo -n "Enter marks obtained : "; read marksObtained
+			invalidMarks=0  ## initialise as 0 (valid)
+			categoriseMarks ## validate and categorise marks
+		done
+		
+		## ask if user wants to continue entering marks, go back, or print marks to txt file
+		echo -n "Press (y) to continue enter the student’s marks, (b) to go back, (p) to print to txt file: "; read choice
+		choice=${choice^^} ##change to uppercase
+		
+		
+		outcome=0 ## initialise outcome of the checking as 0 
+		errMsg="" ## initialise error message as empty string
+		
+		## validate user input
+		EMFcheckInput
+		
+		## prompt again
+		while [ "$outcome" -eq 2 ]
+		do
+					
+			echo -ne "$errMsg Please press (y) to continue enter the student’s marks, (b) to go back, (p) to print to txt file: "; read choice
+			choice=${choice^^} ##change to uppercase
+			outcome=0   ## initialise outcome of the checking as 0 
+			EMFcheckInput  ## revalidate user input
+		done
+		
+		## exit form after printing to txt file
+		if [ "$outcome" -eq 1 ]
+		then
+			exit 2
+		fi
+	done
+}
+
+
+## function to check input
+function EMFcheckInput(){
+
+	## to continue enter marks
+	if [ "$choice" = "Y" ]
+	then
+		echo "" ## loop continues to display examination marks form
+		outcome=0
+		
+	## to print file
+	elif [ "$choice" = "P" ]
+	then
+	
+		## check if file already existed
+		if [ -f "${IDnum}Results.txt" ]
+		then
+			## ask if user wants to overwrite file
+			echo -ne "\nThe file \"${IDnum}Results.txt\" has already existed in current directory. Enter (y) to overwrite it, (n) to cancel printing: "; read answer
+			answer=${answer^^} ##change to uppercase
+			
+			## validate answer
+			checkExistingResultsSlip
+			
+			## check if input is invalid
+			while [ "$outcome" -eq 3 ]
+			do
+				echo -ne "Invalid Input.\nPlease enter (y) to overwrite file, (n) to cancel printing: "; read answer
+				answer=${answer^^} ##change to uppercase
+				checkExistingResultsSlip
+			done
+			
+			## check if user wants to cancel printing	
+			if [ "$outcome" -eq 2 ]
+			then
+				return
+			fi
+			
+		fi
+		
+		## print results to txt file
+		resultsSlip
+		echo -e "\nResults Slip saved as \"${IDnum}Results.txt\"."
+		sleep 3 
+		echo "Exiting form in 2 Seconds"
+		sleep 2
+		outcome=1 ## stop displaying examination marks form
+	
+	## to go back to the previous form	
+	elif [ "$choice" = "B" ]
+	then
+		echo -e "\nExiting form in 2 Seconds"
+		sleep 2
+		outcome=1
+		
+	## input is invalid
+	else
+		errMsg="Invalid input,"
+		outcome=2 ## prompt user to enter again
+	fi
+}
+
+
+## validate academic year
+function validateAcademicYear(){
+	## year should be four digits from 2000 to 2099
+	regexAcademicYear=^20[0-9]{2}$
+	
+	## reloop prompt if input is invalid
+	while ! [[ $academicYear =~ $regexAcademicYear ]]
+	do
+		echo "Invalid Academic Year. Please Enter Again in 2 seconds."
+		sleep 2
+		./formHeaderFormat "Examination Marks Form"
+		echo -n "Academic Year (YYYY): "; read academicYear
+	done
+}
+
+
+## validate semester
+function validateSemester(){
+	## semester should only be 1, 2 or 3
+	regexSemester=^[1-3]$
+	
+	## reloop prompt if input is invalid
+	while ! [[ $semester =~ $regexSemester ]]
+	do
+		echo "Invalid Semester. Please Enter Again in 2 Seconds."
+		sleep 2
+		./formHeaderFormat "Examination Marks Form"
+		echo "Academic Year (YYYY): $academicYear"
+		echo -n "Semester (1 / 2 / 3): "; read semester
+	done
+}
+
+
+## validate course code
+function validateCourseCode(){
+	## format should be four capital letters followed with a number from 1 to 4, and three numbers from 0 to 9
+	regexCourseCode=^[A-Z]{4}[1-4][0-9]{3}$
+	
+	## reloop prompt if the file course.txt does not exist, input doesnt follow the format, or if the entered code is not in course.txt
+	while ! [ -f course.txt ] || ! [[ $courseCode =~ $regexCourseCode ]] || ! grep -iqF $courseCode course.txt
+	do
+		echo "Invalid Course Code. Please Enter Again."
+		echo -n "Enter course code    : "; read courseCode
+		courseCode=${courseCode^^} ##change to uppercase
+	done
+	
+	course+=($courseCode) ## add coursecode to array
+	
+	## get course info
+	courseInfo=$(grep $courseCode ./course.txt)
+	defaultIFS=$IFS
+	IFS=":" ## internal field separator 
+	read -ra courseInfoArr <<< "$courseInfo" ## redirect course info into array
+	IFS=$defaultIFS
+	
+	## get credit hours
+	credits=${courseInfoArr[2]}
+}
+
+
+## validate and categorise marks
+function categoriseMarks(){
+
+	## check if marks is from 0 to 100
+	regexmarks=^[1-9]?[0-9]$
+	if ! [[ $marksObtained =~ $regexmarks ]] && ! [[ $marksObtained =~ ^100$ ]]
+	then
+		echo "Invalid input. Please Enter Again (Format: integer 0-100)."
+		invalidMarks=1
+	else
+		## add marks obtained to array
+		course+=($marksObtained)
+		
+		if [ "$marksObtained" -lt 50 ]
+		then
+			course+=("F")	## add grade to array
+			course+=("Failed") ## add remarks to array
+			let qp=0	## set the quality points 
+			
+		elif [ "$marksObtained" -lt 55 ]
+		then
+			course+=("C")
+			course+=("Pass")
+			let qp=20000*credits ## quality points are being multiplied by 10000 to make it into an integer
+			
+		elif [ "$marksObtained" -lt 60 ]
+		then
+			course+=("C+")
+			course+=("Pass")
+			let qp=25000*credits
+			
+		elif [ "$marksObtained" -lt 65 ]
+		then
+			course+=("B-")
+			course+=("Pass")
+			let qp=27000*credits
+			
+		elif [ "$marksObtained" -lt 70 ]
+		then
+			course+=("B")
+			course+=("Good")
+			let qp=30000*credits
+			
+		elif [ "$marksObtained" -lt 75 ]
+		then
+			course+=("B+")
+			course+=("Good")
+			let qp=35000*credits
+			
+		elif [ "$marksObtained" -lt 80 ]
+		then
+			let qp=37500*credits
+			course+=("A-")
+			course+=("Excellent")
+			
+		else
+			let qp=40000*credits
+			course+=("A")
+			course+=("Excellent")
+		fi
+		
+		course+=("$qp")  ## add integer quality points to array
+		let totalQualityPointsInt+=qp ## add quality points to total integer QP
+	fi
+}
+
+
+## validate input for if user wants to overwrite results slip
+function checkExistingResultsSlip(){
+
+		## do not overwrite
+		if [ "$answer" = "N" ] 
+		then
+			outcome=2
+			errMsg="\nFile not saved."
+		## do overwrite
+		elif [ "$answer" = "Y" ]
+		then
+			outcome=0
+		## invalid input
+		else
+			outcome=3
+		fi
+}
+
+
+function resultsSlip(){
+
+	## display user info and table attributes
+	cat > "${IDnum}Results.txt" <<EOL
+Student ID    : $IDnum
+Student Name  : $name
+Academic Year : $academicYear
+Semester      : $semester
+
+=============================================================================
+Course Code   Marks Obtained   Grade Obtained    Remark     Quality Point
+=============================================================================
+EOL
+	
+	let counter=0
+	while [ $counter -le ${#course[@]} ]
+	do
+		## print details of course to file line by line (quality points are being divided by 10000 to display 4 decimal points)
+		printf " %-19s%-17s%-11s%-16s%-7s\n" "${course[$counter]}" "${course[$counter+1]}" "${course[$counter+2]}" "${course[$counter+3]}" `echo -n "${course[$counter+4]}" | awk '{printf "%.4f\n", $1/10000}'` >> ${IDnum}Results.txt
+		let counter+=5 ## increment counter by 5
+	done
+	
+	## the total quality points in integer are being divided by 10000 to display 4 decimal points
+	totalQualityPoints=`echo -n "$totalQualityPointsInt" | awk '{printf "%.4f\n", $1/10000}'` 
+	
+	## print total quality points to file
+	printf "%60s    %-8s\n" "Total Quality Points:" "$totalQualityPoints" >> ${IDnum}Results.txt
+	
+	
+	#sort each result by the alphabetical order of course code
+	echo 'x' | ex -s -c '8,$-2!sort' ${IDnum}Results.txt
+
+}
+
+## program starts here
+## get parameters
+name=$1
+IDnum=$2
+
+main
+

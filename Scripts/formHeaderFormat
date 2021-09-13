@@ -1,0 +1,19 @@
+#!/bin/bash
+
+## script to display form header
+
+## accept title as parameter
+title="$*"
+
+## Get the terminal's dimensions
+width=$(tput cols)
+
+## Clear the terminal
+clear
+
+## Set the cursor to the middle of the terminal
+tput cup "1" "$((width/3))"
+
+## Underline the String
+echo -e "\e[4m$title\e[0m\n"
+

@@ -1,0 +1,100 @@
+#!/bin/bash
+
+
+## show college management menu
+function showMenu(){
+	clear
+	
+	## number of lines of padding on top of the menu
+	local y=$((($(tput lines)-20)/2))
+	
+	## display the top padding 
+	until [ "$y" -eq 0 ]
+	do
+		echo ""
+		let y=$y-1
+	done 
+	
+	## display menu contents
+	display_center "=============================="
+	display_center "College Management Menu"
+	display_center "=============================="; echo ""
+	display_center "1 – Add New Students        "
+	display_center "2 – Add New Courses         "
+	display_center "3 – Grade Students          "
+	display_center "4 – Search Student Details  "
+	display_center "5 – Search Course Details   "; echo ""
+	display_center "Q – Quit (exit from program)"; echo ""
+	display_center "Please select a choice: "
+	read choice
+}
+
+
+## to display texts at the centre to the line
+function display_center(){
+	text="$*"
+	
+	## calculate the length of left padding
+	local x=$((($(tput cols)-${#text})/2))
+	local paddingLength=$x
+	local padding=""
+	
+	## loop to create a variable for the left padding
+	until [ "$paddingLength" -eq 0 ]
+	do
+		padding+=" "
+		let paddingLength=$paddingLength-1
+	done
+	
+	## display text with left padding
+	if [ "$text" = "Please select a choice: " ]
+	then
+		printf "%s%s" "$padding" "$text"
+	return 
+	fi
+
+	printf "%s%s\n" "$padding" "$text"
+}
+
+
+## execute scripts according to user input
+function checkChoice(){
+	case $choice in
+		1)
+			./ProgrammeSelectionScript
+			;;
+		2)	
+			./AddNewCourseFormScript
+			;;
+		3)
+			./StudentValidationFormScript
+			;;
+		4)
+			./SearchStudentDetailsFormScript
+			;;
+		5)
+			./SearchCourseDetailsScript
+			;;
+		"Q"|"q")
+			echo ""
+			display_center "program exiting..."
+			echo ""
+			sleep 2
+			exit
+			;;
+		*)
+			display_center "Invalid Choice. Please Try Again in 2 seconds."
+			sleep 1
+			;;
+	esac
+}
+
+
+## program starts here
+## keep looping the menu
+while [ true ]
+do
+	showMenu
+	checkChoice
+done
+

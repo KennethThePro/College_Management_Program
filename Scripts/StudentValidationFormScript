@@ -1,0 +1,122 @@
+#!/bin/bash
+
+## Display student validation form (SVF)
+function main(){
+	while [ true ]
+	do
+		./formHeaderFormat "Student Validation Form"
+	
+		echo -n "Enter Student ID Number  : "; read IDnum
+		IDnum=${IDnum^^}
+		
+		SVFcheckID
+		
+		## jump to next iteration if student id is invalid 
+		if [ "$invalidID" -eq 1 ]
+		then
+			continue
+		fi
+
+		## display student name and programme
+		echo -ne "Student Name             : $name \nProgramme                : $programme\n"
+		echo -ne "\nPress (n) to continue to enter the student’s marks or (q) to exit the form: "; read input
+		input=${input^^}
+		
+		SVFinputSelection ## process user input
+		
+		break
+	done
+}
+
+
+## function to validate student ID
+function SVFcheckID(){
+	if [ -z "$IDnum" ]
+	then
+		echo "Null student ID. Please Enter Again in 2 Seconds.";
+		sleep 2
+		invalidID=1  ## id is invalid
+		return
+	fi
+	
+	invalidID=0
+	## match input with the contents in student.txt
+	student=$(grep $IDnum ./student.txt)
+	
+	defaultIFS=$IFS
+	IFS=':' ## internal field separator
+	read -a infoArr <<< "$student" ## redirect student info into array
+	IFS=$defaultIFS  ## reset default IFS
+	
+	name=${infoArr[2]}
+	programme=${infoArr[0]}
+	
+	## check if input is same with the student ID retrieve
+	if [ "$IDnum" != "${infoArr[1]}" ] 
+	then
+		echo "Invalid student ID. Please Enter Again in 2 Seconds.";
+		sleep 2
+		invalidID=1  ## id is invalid
+	fi
+}
+
+
+## function to process selected input
+function SVFinputSelection(){
+
+	## validate input
+	SVFcheckInput
+	
+	## while input is invalid
+	while [ "$invalidInput" = 1 ]
+	do
+		clear
+		completedSVF  ## reprompt user to enter again
+		SVFcheckInput ## check the input again
+	done
+}
+
+
+## function to check the selected input
+function SVFcheckInput(){
+	invalidInput=0
+	
+	##display examination marks form
+	if [ "$input" = "N" ]
+	then
+		## display examination marks form
+		./ExaminationMarksFormScript "$name" $IDnum
+		
+		## redisplay completed form if the examination marks form returns the value of 2
+		if [ "$?" -eq 2 ]
+		then
+			completedSVF
+			SVFinputSelection
+		fi
+	
+	## quit form	
+	elif [ "$input" = "Q" ]
+	then
+		exit
+	## invalid input
+	else
+		invalidInput=1
+		echo "Invalid input. Please Enter Again in 2 Seconds.";
+		sleep 2
+	fi
+}
+
+
+## Complete Validation  Form with student ID, name and programme 
+function completedSVF(){
+	./formHeaderFormat "Student Validation Form"
+	echo -ne "Enter Student ID Number  : $IDnum
+Student Name             : $name
+Programme                : $programme
+\nPress (n) to continue to enter the student’s marks or (q) to exit the form: "; read input
+input=${input^^}
+}
+
+main
+
+

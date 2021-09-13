@@ -1,0 +1,209 @@
+#!/bin/bash
+
+function courseCodeValidation(){
+	echo -n "Course Code         : "; read courseCode
+	
+	#Auto Capitilise The 4 Letters When Necessary
+	courseCode=${courseCode^^} 
+	
+	#Course Code Consist of 4 Letters Followed By 4 Digits Where First Digits Is 1-4 usually
+	regexCourseCode=^[A-Z]{4}[1-4][0-9]{3}$
+	
+	#check if input empty
+	if [ -z "$courseCode" ] 
+	then
+		echo "Course Code Is Empty. Please Enter Again in 2 Seconds."
+		sleep 2
+		clear
+		./formHeaderFormat "Add New Course Form"
+		courseCodeValidation
+	
+	#Check the file first if Course Code exist first
+	elif grep -qF "$courseCode" course.txt
+	then
+   		echo "Course Code Already Exist. Plase Enter A New Course Code in 2 Seconds."
+   		sleep 2
+   		clear
+		./formHeaderFormat "Add New Course Form"
+		courseCodeValidation
+	
+	#Check if Course Code Format is Correct
+	elif ! [[ $courseCode =~ $regexCourseCode ]]
+	then
+		echo "Incorrect Course Code Format. Please Enter Again in 3 Seconds (Format: ABCD1111, number cannot start with 0)"
+		sleep 3
+		clear
+		./formHeaderFormat "Add New Course Form"
+		courseCodeValidation
+		
+	else
+		clear
+		./formHeaderFormat "Add New Course Form"
+		echo "Course Code         : "$courseCode
+	fi		
+}
+
+function courseNameValidation(){
+	echo -n "Course Name         : "; read courseName
+	
+	#Auto Capitalize Each Word Including After Dash
+	courseName="${courseName,,}"
+	courseName=$(echo "$courseName" | sed -e 's/\b\(.\)/\u\1/g')
+	#Course name consist of letters and may include a Dash and/or Dot
+	regexCourseName='^([a-zA-Z]+\s)*[a-zA-Z -.]+$'
+	
+	#check if input empty
+	if [ -z "$courseName" ] 
+	then
+		echo "Course Name Is Empty. Please Enter Again in 2 Seconds."
+		sleep 2
+		clear
+		./formHeaderFormat "Add New Course Form"
+		echo "Course Code         : "$courseCode
+		courseNameValidation
+	
+	#Check the file first if course name exist first
+	elif grep -qF "$courseName" course.txt
+	then
+   		echo "Course Name Already Exist. Please Enter A New Course Name in 2 Seconds."
+   		sleep 2
+   		clear
+		./formHeaderFormat "Add New Course Form"
+		echo "Course Code         : "$courseCode
+		courseNameValidation
+	
+	#Check if Course Name Format is Correct
+	elif ! [[ $courseName =~ $regexCourseName ]]
+	then
+		echo "Incorrect Course Name Format. Please Enter Again in 3 Seconds (Format: Only Letters With Dashes or Dots)"
+		sleep 3
+		clear
+		./formHeaderFormat "Add New Course Form"
+		echo "Course Code         : "$courseCode
+		courseNameValidation
+		
+	else
+		clear
+		./formHeaderFormat "Add New Course Form"
+		echo "Course Code         : "$courseCode
+		echo "Course Name         : "$courseName
+	fi
+}
+
+function creditHourValidation(){
+	echo -n "Credit Hours (1-12) : "; read creditHours
+	
+	#Credit Hours In Interger Only
+	regexCreditHours='^[0-9]+$'
+	
+	#check if input empty
+	if [ -z "$creditHours" ] 
+	then
+		echo "Credit Hours Is Empty. Please Enter Again in 2 Seconds."
+		sleep 2
+		clear
+		./formHeaderFormat "Add New Course Form"
+		echo "Course Code         : "$courseCode
+		echo "Course Name         : "$courseName
+		creditHourValidation
+	
+	#Check if it is not an interger
+	elif ! [[ $creditHours =~ $regexCreditHours ]]
+	then
+  		echo "Credit Hours Must Be Positive Integers Only (1 to 12). Please Enter Again in 3 Seconds."
+  		sleep 3
+  		clear
+		./formHeaderFormat "Add New Course Form"
+		echo "Course Code         : "$courseCode
+		echo "Course Name         : "$courseName
+		creditHourValidation
+	
+	#Check if the range is below 1 or more than 12
+	elif [ $creditHours -lt 1 -o $creditHours -gt 12 ]
+	then
+		echo "Credit Hours Out of Range. Please Enter Acceptable Range from 1 to 12 only in 3 Seconds."
+		sleep 3
+  		clear
+		./formHeaderFormat "Add New Course Form"
+		echo "Course Code         : "$courseCode
+		echo "Course Name         : "$courseName
+		creditHourValidation
+		
+	else
+	clear
+		./formHeaderFormat "Add New Course Form"
+		echo "Course Code         : "$courseCode
+		echo "Course Name         : "$courseName
+		echo "Credit Hours (1-12) : "$creditHours	
+	fi
+}
+
+#Saving Course Records
+function savingCourseRecords(){
+	echo -ne "\nSaving course records..."
+	sleep 2
+	echo "$courseCode:$courseName:$creditHours" >> course.txt
+}
+
+#Add Another Course
+function addAnotherCourse(){
+	echo -ne "\n\nAdd Another Course? (y)es or (q)uit: "; read choice 
+	choice=${choice,,}
+	echo 
+	case "$choice" in
+		y)
+			:
+			;;
+		q) 
+			read -n1 -s -r -p $"Press(q) to return to College Management Menu"  key
+			nextCourse=0
+			
+			#Return only when "q" is pressed
+			while [ "$key" != "q" ] 
+			do
+				read -n1 -s -r -p "" key
+				if [ "$key" = "q" ]; then
+					break
+				fi
+			done
+			;;
+		*)
+			echo "Invalid Choice. Please Enter Again in 2 Seconds"
+			sleep 2
+			clear
+			./formHeaderFormat "Add New Course Form"
+			echo "Course Code         : "$courseCode
+			echo "Course Name         : "$courseName
+			echo "Credit Hours (1-12) : "$creditHours
+			echo -ne "\nSaving course records..."
+			addAnotherCourse
+			;;	
+	esac
+}
+
+#Program Starts Here
+#Create New File If Does Not Exist
+if [ ! -e "course.txt" ] ; then
+    touch "course.txt"
+fi
+
+nextCourse=1
+while [ $nextCourse -eq 1 ]
+do
+	clear
+	./formHeaderFormat "Add New Course Form"
+	courseCodeValidation
+	courseNameValidation
+	creditHourValidation
+	savingCourseRecords
+	addAnotherCourse
+	
+	if [ $nextCourse -eq 0 ]
+	then
+		clear
+		#Go back to main menu
+		exit
+	else
+		continue
+	fi
+done

@@ -1,0 +1,92 @@
+#!/bin/bash
+#-e enables interpretation of backslash escape
+
+#Menu Selection
+function showMenu(){
+	clear
+
+	echo "Programme Selections Menu"
+	echo -e "=========================\n"
+
+	echo "T - RIT (Bachelor in Information Technology)"
+	echo "D - RSD (Bachelor in Software Development)"
+	echo "S - RST (Bachelor in Interactive Software Technology)"
+	echo "E - REI (bachelor in Enterprise Information System)"
+	echo -e "F - RSF (Bachelor in Software Engineering)\n"
+
+	echo -e "Q - Quit (Return to College Management Menu)\n"
+
+	echo -n "Please select a choice: "; read choice
+	
+	#Uppercase the choice
+	choice=${choice^}
+}
+
+#Selection of Program Choice
+function checkChoice(){
+	invalid=0
+	case "$choice" in
+
+		"T" | "D" | "S" | "E" | "F")
+			if [ "$choice" = "T" ]
+			then
+				programme="RIT"
+				
+			elif [ "$choice" = "D" ]
+			then
+				programme="RSD"
+				
+			elif [ "$choice" = "S" ]
+			then
+				programme="RST"
+				
+			elif [ "$choice" = "E" ]
+			then
+				programme="REI"
+			
+			else
+				programme="RSF"
+			fi
+			#Export the variable data to the next script
+			export programme
+			#Call the next script to add student information
+			./AddNewStudentFormScript
+			
+			if [ "$?" -eq 1 ]
+			then 
+				exit
+			fi
+			;;
+			
+		"Q")
+			newProgrammeSelection=0 
+			quit=1
+			;;
+			
+		*)
+			invalid=1
+			echo "Invalid Choice. Please Try Again in 2 Seconds"
+			sleep 2
+			;;
+
+	esac
+}
+
+#Program Starts Here
+newProgrammeSelection=1
+while [ $newProgrammeSelection -eq 1 ]
+do
+	quit=0
+	showMenu
+	checkChoice
+	if [ "$invalid" -eq 1 ]
+	then
+		continue
+	fi
+	
+	if [ $quit -eq 1 ]
+	then
+		exit
+	fi
+		
+done

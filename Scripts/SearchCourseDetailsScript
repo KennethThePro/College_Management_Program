@@ -1,0 +1,135 @@
+#!/bin/bash
+
+function searchCourseCode(){
+	echo -n "Enter Course Code: "; read courseCode
+	
+	#Auto Capitilise The 4 Letters When Necessary
+	courseCode=${courseCode^^} 
+	
+	#Course Code Consist of 4 Letters Followed By 4 Digits Where First Digits Is 1-4 usually
+	regexCourseCode=^[A-Z]{4}[1-4][0-9]{3}$
+	
+	#check if input empty
+	if [ -z "$courseCode" ] 
+	then
+		#Empty Course Code
+		emptyWrongCourse=1
+		clear
+		./formHeaderFormat "Search Course Details Form"
+		echo "Enter Course Code: "$courseCode
+		echo "Course Code Is Empty. Please Enter Again in 2 Seconds."
+		sleep 2
+	
+	#check if Course Code is found
+	elif grep -qF "$courseCode" course.txt
+	then
+		echo "Found"
+		
+		emptyWrongCourse=0
+		found=1
+		course=$(grep $courseCode course.txt | cut -b 9-)
+		echo $course
+		
+		defaultIFS=$IFS
+   		IFS=":" ## internal field separator 
+   		
+		read -ra infoArr <<< "$course" ## redirect course info into array
+   		IFS=$defaultIFS
+   		
+   		clear
+		./formHeaderFormat "Search Course Details Form"
+		echo  "Enter Course Code: "$courseCode
+		
+		echo  -e "\n\nCourse Name  : ""${infoArr[1]}"
+		echo  -e "\n\nCredit Hours : ""${infoArr[2]}"
+	
+	#check if Course Code format is correct
+	elif ! [[ $courseCode =~ $regexCourseCode ]]
+	then
+		#Wrong Course Code Format
+		emptyWrongCourse=1
+		echo "Incorrect Course Code Format. Please Enter Again in 3 Seconds (Format: ABCD1111, number cannot start with 0)"
+		sleep 3
+		clear
+		
+		
+	else
+		#Correct Format Course Code But Not Found
+		emptyWrongCourse=0
+		found=0
+		clear
+		./formHeaderFormat "Search Course Details Form"
+		echo  "Enter Course Code: "$courseCode
+		echo -e "\nCourse Code Not Found"
+	fi		
+}
+
+#Search Another Course
+function searchAnotherCourse(){
+	echo -ne "\n\nSearch Another Course? (y)es or (q)uit: "; read choice 
+	choice=${choice,,}
+	echo 
+	case "$choice" in
+		y)
+			:
+			;;
+		q) 
+			read -n1 -s -r -p $"Press(q) to return to College Management Menu"  key
+			searchNextCourse=0
+			
+			#Return only when "q" is pressed
+			while [ "$key" != "q" ] 
+			do
+				read -n1 -s -r -p "" key
+				if [ "$key" = "q" ]; then
+					break
+				fi
+			done
+			;;
+		*)
+			echo "Invalid Choice. Please Enter Again in 2 Second"
+			sleep 2
+			clear
+			./formHeaderFormat "Search Course Details Form"
+			if [ $emptyWrongCourse -eq 0 -a $found -eq 1 ]
+			then
+				echo  "Enter Course Code: "$courseCode
+				echo  -e "\n\nCourse Name  : ""${infoArr[1]}"
+				echo  -e "\n\nCredit Hours : ""${infoArr[2]}"
+			else
+				echo  "Enter Course Code: "$courseCode
+				echo -e "\nCourse Code Not Found"
+			fi
+			searchAnotherCourse
+			;;
+	esac
+}
+
+#Program Starts Here
+searchNextCourse=1
+#Check Empty or Wrong Format Flag
+emptyWrongCourse=0
+while [ $searchNextCourse -eq 1 ]
+do
+	./formHeaderFormat "Search Course Details Form"
+	searchCourseCode
+	
+	if [ $emptyWrongCourse -eq 1 ]
+	#if Empty or Wrong Course Code Format
+	then
+		continue
+	else
+		#When Found
+		searchAnotherCourse
+	fi
+	
+	if [ $searchNextCourse -eq 0 ]
+	then
+		clear
+		#Go back to main menu
+		exit
+	else
+		#find another course
+		continue
+	fi
+done
