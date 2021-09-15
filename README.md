@@ -1,7 +1,7 @@
 # College Management System using Bash
 
 ## Purpose
-The purpose of this programme is to manage the students, grades of the student and the course information.
+The purpose of this program is to manage the students, grades of the student and the course information.
 
 ## Features of the College Management System
 The Book Ordering System will show a simple menu consisting of five optionsns which are:
